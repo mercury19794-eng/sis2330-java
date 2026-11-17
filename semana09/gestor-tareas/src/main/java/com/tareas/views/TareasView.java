@@ -13,13 +13,14 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouterLink;
 
-@Route("")
+@Route(value = "", layout = MainLayout.class)
 public class TareasView extends VerticalLayout {
 
-    // Lista en memoria donde se guardan las tareas (se pierde al reiniciar)
-    private final List<Tarea> tareas = new ArrayList<>();
-    private long siguienteId = 1;
+    // Lista estatica en memoria donde se guardan las tareas: la comparte TareaDetalleView
+    private static final List<Tarea> TAREAS = new ArrayList<>();
+    private static long siguienteId = 1;
 
     private final Grid<Tarea> grid = new Grid<>(Tarea.class, false);
     private final TextField descripcion = new TextField("Descripcion");
@@ -34,6 +35,9 @@ public class TareasView extends VerticalLayout {
         grid.addColumn(Tarea::id).setHeader("ID");
         grid.addColumn(Tarea::descripcion).setHeader("Descripcion");
         grid.addColumn(t -> t.completada() ? "Si" : "No").setHeader("Completada");
+        // Columna con un RouterLink por fila hacia /tareas/{id}
+        grid.addComponentColumn(t -> new RouterLink("Ver detalle", TareaDetalleView.class, t.id()))
+                .setHeader("Detalle");
         grid.asSingleSelect().addValueChangeListener(evento -> cargarEnFormulario(evento.getValue()));
 
         binder.forField(descripcion)
@@ -74,12 +78,12 @@ public class TareasView extends VerticalLayout {
 
         if (seleccionActual == null) {
             // Aqui se guarda la tarea nueva en la lista
-            tareas.add(new Tarea(siguienteId++, editable.getDescripcion(), editable.isCompletada()));
+            TAREAS.add(new Tarea(siguienteId++, editable.getDescripcion(), editable.isCompletada()));
         } else {
             // Se busca por id (no por referencia) y se reemplaza por una Tarea nueva
             long id = seleccionActual.id();
-            tareas.removeIf(t -> t.id() == id);
-            tareas.add(new Tarea(id, editable.getDescripcion(), editable.isCompletada()));
+            TAREAS.removeIf(t -> t.id() == id);
+            TAREAS.add(new Tarea(id, editable.getDescripcion(), editable.isCompletada()));
         }
         refrescarGrid();
         cargarEnFormulario(null);
@@ -90,12 +94,20 @@ public class TareasView extends VerticalLayout {
             Notification.show("Selecciona una tarea para eliminar");
             return;
         }
-        tareas.removeIf(t -> t.id() == seleccionActual.id());
+        TAREAS.removeIf(t -> t.id() == seleccionActual.id());
         refrescarGrid();
         cargarEnFormulario(null);
     }
 
     private void refrescarGrid() {
-        grid.setItems(tareas);
+        grid.setItems(TAREAS);
+    }
+
+    // Lo usa TareaDetalleView: devuelve null si el id no existe
+    public static Tarea buscarPorId(long id) {
+        return TAREAS.stream()
+                .filter(t -> t.id() == id)
+                .findFirst()
+                .orElse(null);
     }
 }
