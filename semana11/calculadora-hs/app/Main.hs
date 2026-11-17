@@ -1,6 +1,13 @@
-module Main (main) where
+module Main where
 
-import Lib
+import Lib (suma)
 
 main :: IO ()
-main = someFunc
+main = do
+  putStrLn "Ingresa el primer numero:"
+  linea1 <- getLine
+  putStrLn "Ingresa el segundo numero:"
+  linea2 <- getLine
+  let a = read linea1 :: Int
+  let b = read linea2 :: Int
+  putStrLn ("La suma es: " ++ show (suma a b))
