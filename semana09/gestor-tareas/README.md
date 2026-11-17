@@ -1,17 +1,27 @@
-# Gestor de Tareas - Grid y CRUD
+# Gestor de Tareas - Navegacion Multi-Vista
 
-## Descripcion
-Aplicacion web Vaadin con tabla editable (Grid), formulario validado
-(Binder) y operaciones CRUD completas sobre tareas.
+## Que hace
+Aplicacion Vaadin con varias pantallas navegables: un listado de tareas con Grid
+(con alta, edicion y eliminacion), una vista de detalle por id y una pantalla
+"Acerca de". Todas comparten un menu lateral (AppLayout).
 
-## Como ejecutar
-Abrir http://localhost:8080
+## Vistas y rutas
+- TareasView: ruta "/" (listado, formulario y enlace "Ver detalle")
+- TareaDetalleView: ruta "/tareas/{id}" (recibe el id con HasUrlParameter)
+- AcercaDeView: ruta "/acerca" (texto informativo)
+- MainLayout: barra superior y menu lateral compartidos
 
-## Estructura
-- com.tareas.Tarea -- record inmutable (id, descripcion, completada)
-- com.tareas.views.TareaEditable -- clase mutable para el Binder
-- com.tareas.views.TareasView -- vista con Grid y formulario
+## Como se ejecuta
+    cd semana09/gestor-tareas
+    mvn spring-boot:run
+Luego abrir http://localhost:8080/ en el navegador.
 
-## Nota
-TareaEditable existe porque Binder necesita setters y Tarea es inmutable.
-Los datos se pierden al reiniciar (almacenamiento en memoria).
+## Que se aprendio
+- Varias vistas con @Route y un layout compartido (layout = MainLayout.class).
+- RouterLink para navegar sin recargar la pagina.
+- HasUrlParameter<Long> para recibir un id desde la URL.
+- Manejo del caso "id no encontrado" con un mensaje claro.
+- Lista estatica en memoria compartida entre vistas.
+
+## Que quedo pendiente
+- Guardar las tareas en una base de datos (hoy se pierden al reiniciar).
