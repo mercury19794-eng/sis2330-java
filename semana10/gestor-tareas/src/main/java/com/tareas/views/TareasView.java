@@ -1,9 +1,7 @@
 package com.tareas.views;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.tareas.Tarea;
+import com.tareas.TareaService;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.grid.Grid;
@@ -18,9 +16,8 @@ import com.vaadin.flow.router.RouterLink;
 @Route(value = "", layout = MainLayout.class)
 public class TareasView extends VerticalLayout {
 
-    // Lista estatica en memoria donde se guardan las tareas: la comparte TareaDetalleView
-    private static final List<Tarea> TAREAS = new ArrayList<>();
-    private static long siguienteId = 1;
+    // El servicio lo inyecta Spring por el constructor: la vista no guarda datos propios
+    private final TareaService servicio;
 
     private final Grid<Tarea> grid = new Grid<>(Tarea.class, false);
     private final TextField descripcion = new TextField("Descripcion");
@@ -30,12 +27,13 @@ public class TareasView extends VerticalLayout {
     // Puntero a la fila seleccionada: null significa que se esta creando una nueva
     private Tarea seleccionActual;
 
-    // Constructor: aqui se arma la tabla, el formulario y los botones
-    public TareasView() {
+    // Constructor: recibe el servicio y arma la tabla, el formulario y los botones
+    public TareasView(TareaService servicio) {
+        this.servicio = servicio;
+
         grid.addColumn(Tarea::id).setHeader("ID");
         grid.addColumn(Tarea::descripcion).setHeader("Descripcion");
         grid.addColumn(t -> t.completada() ? "Si" : "No").setHeader("Completada");
-        // Columna con un RouterLink por fila hacia /tareas/{id}
         grid.addComponentColumn(t -> new RouterLink("Ver detalle", TareaDetalleView.class, t.id()))
                 .setHeader("Detalle");
         grid.asSingleSelect().addValueChangeListener(evento -> cargarEnFormulario(evento.getValue()));
@@ -48,10 +46,10 @@ public class TareasView extends VerticalLayout {
 
         Button guardar = new Button("Guardar", evento -> guardar());
         Button eliminar = new Button("Eliminar", evento -> eliminar());
-        Button limpiar = new Button("Nuevo", evento -> cargarEnFormulario(null));
+        Button nuevo = new Button("Nuevo", evento -> cargarEnFormulario(null));
 
         VerticalLayout formulario = new VerticalLayout(descripcion, completada,
-                new HorizontalLayout(guardar, eliminar, limpiar));
+                new HorizontalLayout(guardar, eliminar, nuevo));
 
         add(new HorizontalLayout(grid, formulario));
         refrescarGrid();
@@ -75,15 +73,11 @@ public class TareasView extends VerticalLayout {
             Notification.show("Revisa los datos del formulario");
             return;
         }
-
         if (seleccionActual == null) {
-            // Aqui se guarda la tarea nueva en la lista
-            TAREAS.add(new Tarea(siguienteId++, editable.getDescripcion(), editable.isCompletada()));
+            servicio.agregar(editable.getDescripcion());
         } else {
-            // Se busca por id (no por referencia) y se reemplaza por una Tarea nueva
-            long id = seleccionActual.id();
-            TAREAS.removeIf(t -> t.id() == id);
-            TAREAS.add(new Tarea(id, editable.getDescripcion(), editable.isCompletada()));
+            servicio.actualizar(new Tarea(seleccionActual.id(),
+                    editable.getDescripcion(), editable.isCompletada()));
         }
         refrescarGrid();
         cargarEnFormulario(null);
@@ -94,20 +88,12 @@ public class TareasView extends VerticalLayout {
             Notification.show("Selecciona una tarea para eliminar");
             return;
         }
-        TAREAS.removeIf(t -> t.id() == seleccionActual.id());
+        servicio.eliminar(seleccionActual.id());
         refrescarGrid();
         cargarEnFormulario(null);
     }
 
     private void refrescarGrid() {
-        grid.setItems(TAREAS);
-    }
-
-    // Lo usa TareaDetalleView: devuelve null si el id no existe
-    public static Tarea buscarPorId(long id) {
-        return TAREAS.stream()
-                .filter(t -> t.id() == id)
-                .findFirst()
-                .orElse(null);
+        grid.setItems(servicio.listar());
     }
 }
