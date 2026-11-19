@@ -34,7 +34,6 @@ ghc-options:
 - -Wredundant-constraints
 
 library:
-  library:
   source-dirs: src
   dependencies:
   - directory
