@@ -17,3 +17,5 @@ target/
 Thumbs.db
 frontend/
 node_modules/
+.stack-work/
+estudiantes.csv
